@@ -560,48 +560,72 @@
           document.getElementById("loadingSpinner").classList.add("hidden");
         }
       }
-
-      function exportToExcel() {
+function exportToExcel() {
         document.getElementById("loadingSpinner").classList.remove("hidden"); // Show
         try {
-          let table = document.querySelector("table");
-          let rows = [...table.rows].map(row => [...row.cells].map(cell => cell.innerText));
-          const wb = XLSX.utils.book_new();
-          const ws = XLSX.utils.aoa_to_sheet(rows);
-          XLSX.utils.book_append_sheet(wb, ws, "Orders");
-          const wbout = XLSX.write(wb, {
-            bookType: 'xlsx',
-            type: 'binary'
-          });
+            // --- Phần lấy dữ liệu và tạo bảng chi tiết (như cũ) ---
+            let table = document.querySelector("table");
+            let rows = [...table.rows].map(row => [...row.cells].map(cell => cell.innerText));
 
-          function s2ab(s) {
-            const buf = new ArrayBuffer(s.length);
-            const view = new Uint8Array(buf);
-            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-            return buf;
-          }
-          const blob = new Blob([s2ab(wbout)], {
-            type: 'application/octet-stream'
-          });
-          const href = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = href;
-          link.download = "danh_sach_don_hang_" + new Date().toISOString().split("T")[0] + ".xlsx";
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(href);
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, "Orders");
+
+
+            // --- Thêm phần tạo bảng thống kê ---
+            const summary = {};
+            const todayOrders = rows.slice(1); // Bỏ header, lấy các dòng còn lại
+
+             todayOrders.forEach(order => {
+                const drinkKey = order[1] + " (" + order[4] + ")"; //  Thức uống (Size)
+                summary[drinkKey] = (summary[drinkKey] || 0) + parseInt(order[3]); // Cộng dồn số lượng
+
+                if (order[2] !== "Không") { // Nếu có món ăn
+                    const foodKey = order[2];
+                    summary[foodKey] = (summary[foodKey] || 0) + 1; // Cộng dồn, mỗi order tính là 1
+                }
+            });
+
+            const summaryRows = Object.entries(summary).map(([item, quantity]) => [item, quantity]);
+            summaryRows.unshift(["Món", "Số Lượng"]); // Header cho bảng thống kê
+            const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+             XLSX.utils.book_append_sheet(wb, wsSummary, "Summary"); // Sheet mới
+
+
+            // --- Phần ghi file (như cũ, nhưng dùng wb đã có 2 sheet) ---
+            const wbout = XLSX.write(wb, {
+                bookType: 'xlsx',
+                type: 'binary'
+            });
+
+            function s2ab(s) {
+                const buf = new ArrayBuffer(s.length);
+                const view = new Uint8Array(buf);
+                for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+                return buf;
+            }
+            const blob = new Blob([s2ab(wbout)], {
+                type: 'application/octet-stream'
+            });
+            const href = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = href;
+            link.download = "danh_sach_don_hang_" + new Date().toISOString().split("T")[0] + ".xlsx";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(href);
         } catch (error) {
-          //console.error("Lỗi khi xuất Excel:", error); // Bỏ console.error
-          Swal.fire({
-            icon: 'error',
-            title: translations[document.documentElement.lang]['exportError'], // Dùng translation
-            text: error.message,
-          });
+            //console.error("Lỗi khi xuất Excel:", error); // Bỏ console.error
+            Swal.fire({
+                icon: 'error',
+                title: translations[document.documentElement.lang]['exportError'], // Dùng translation
+                text: error.message,
+            });
         } finally {
-          document.getElementById("loadingSpinner").classList.add("hidden"); // Hide
+            document.getElementById("loadingSpinner").classList.add("hidden"); // Hide
         }
-      }
+    }
       document.getElementById("orderForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const name = document.getElementById("name").value.trim();
