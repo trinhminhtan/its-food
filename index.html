@@ -3,7 +3,23 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đặt Món Trưa</title>
+    <title>Đặt Món Trưa - IT Strategy, Chingluh Group</title>
+    <meta name="description" content="Đặt món trưa trực tuyến nhanh chóng và tiện lợi cho nhóm IT Strategy (ITS) tại Chingluh. Thực đơn phong phú, món ăn chất lượng, giao hàng tận nơi trong nội bộ công ty. Đặt ngay!">
+    <meta name="keywords" content="đặt món trưa, cơm trưa nội bộ, ITS, IT Strategy, Chingluh, cơm trưa văn phòng, đặt cơm online, thực đơn cơm trưa, nhóm IT, giao đồ ăn">
+    <meta name="author" content="IT Strategy, Chingluh Group">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Đặt Món Trưa Online - Dành cho Nhóm ITS, Chingluh">
+    <meta property="og:description" content="Đặt món trưa trực tuyến nhanh chóng, tiện lợi cho nhóm IT Strategy. Thực đơn đa dạng, giao hàng nội bộ!">
+    <meta property="og:image" content="public/theme.jpeg">
+    <meta property="og:url" content="#">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Đặt Món Trưa Nội Bộ ITS">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Đặt Món Trưa Online - Dành cho Nhóm ITS, Chingluh">
+    <meta name="twitter:description" content="Đặt món trưa trực tuyến nhanh chóng, tiện lợi cho nhóm IT Strategy. Thực đơn đa dạng, giao hàng nội bộ!">
+    <meta name="twitter:image" content="public/theme.jpeg">
+    <meta name="twitter:site" content="#">
+    <link rel="canonical" href="#" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -228,15 +244,11 @@
         <div class="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-blue-500"></div>
         <span class="ml-3 text-white text-lg font-semibold" data-translate="loading">Đang tải...</span>
       </div>
-<h1 class="relative text-4xl md:text-5xl font-bold text-white p-10 md:p-16 bg-cover bg-center rounded-2xl shadow-2xl"
-    style="background-image: url('public/theme.jpeg'); width: 100%; min-height: 300px; position: relative;">
-  <div class="absolute inset-0 bg-black bg-opacity-40 rounded-2xl"></div>
-  <span class="absolute bottom-0 right-0 z-10 bg-black bg-opacity-60 px-6 py-2 rounded-lg text-5xl md:text-5xl m-2">
-    Đặt Món Trưa
-  </span>
-</h1>
-
-<p id="countdown" class="text-center text-2xl md:text-3xl text-red-600 font-semibold mb-6 md:mb-10 pt-4"></p>
+      <h1 class="relative text-4xl md:text-5xl font-bold text-white p-10 md:p-16 bg-cover bg-center rounded-2xl shadow-2xl" style="background-image: url('public/theme.jpeg'); width: 100%; min-height: 300px; position: relative;">
+        <div class="absolute inset-0 bg-black bg-opacity-40 rounded-2xl"></div>
+        <span class="absolute bottom-0 right-0 z-10 bg-black bg-opacity-60 px-6 py-2 rounded-lg text-5xl md:text-5xl m-2"> Đặt Món Trưa </span>
+      </h1>
+      <p id="countdown" class="text-center text-2xl md:text-3xl text-red-600 font-semibold mb-6 md:mb-10 pt-4"></p>
       <form id="orderForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="md:col-span-1">
           <h2 class="text-2xl font-semibold text-blue-700 text-center border-b border-blue-300 pb-2 mb-4">
@@ -495,7 +507,6 @@
           extraIcon.classList.add("fa-snowflake");
         }
       })
-      
       async function loadOrders() {
         try {
           document.getElementById("loadingSpinner").classList.remove("hidden");
@@ -508,14 +519,15 @@
           const todayOrders = orders[today] || [];
           document.getElementById("orderList").innerHTML = todayOrders.map(order => `
                     
-												<tr>
-													<td class="border p-2">${order.name}</td>
-													<td class="border p-2">${order.drink}</td>
-													<td class="border p-2">${order.food || "Không"}</td>
-													<td class="border p-2">${order.quantity}</td>
-													<td class="border p-2">${order.size}</td>
-													<td class="border p-2">${order.extra ? "✅" : "❌"}</td>
-												</tr>
+												
+																											<tr>
+																												<td class="border p-2">${order.name}</td>
+																												<td class="border p-2">${order.drink}</td>
+																												<td class="border p-2">${order.food || "Không"}</td>
+																												<td class="border p-2">${order.quantity}</td>
+																												<td class="border p-2">${order.size}</td>
+																												<td class="border p-2">${order.extra ? "✅" : "❌"}</td>
+																											</tr>
                 `).join("");
         } catch (error) {
           //console.error("Lỗi khi tải đơn hàng:", error);  // Bỏ console.error
@@ -551,7 +563,8 @@
           });
           const summaryList = document.getElementById("summaryList");
           summaryList.innerHTML = Object.entries(summary).map(([item, quantity]) => `
-												<li>${item}: ${quantity}</li>`).join("");
+												
+																											<li>${item}: ${quantity}</li>`).join("");
         } catch (error) {
           //console.error("Lỗi khi tải thống kê", error); // Bỏ console.error
           Swal.fire({
@@ -563,72 +576,65 @@
           document.getElementById("loadingSpinner").classList.add("hidden");
         }
       }
-function exportToExcel() {
+
+      function exportToExcel() {
         document.getElementById("loadingSpinner").classList.remove("hidden"); // Show
         try {
-            // --- Phần lấy dữ liệu và tạo bảng chi tiết (như cũ) ---
-            let table = document.querySelector("table");
-            let rows = [...table.rows].map(row => [...row.cells].map(cell => cell.innerText));
-
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, ws, "Orders");
-
-
-            // --- Thêm phần tạo bảng thống kê ---
-            const summary = {};
-            const todayOrders = rows.slice(1); // Bỏ header, lấy các dòng còn lại
-
-             todayOrders.forEach(order => {
-                const drinkKey = order[1] + " (" + order[4] + ")"; //  Thức uống (Size)
-                summary[drinkKey] = (summary[drinkKey] || 0) + parseInt(order[3]); // Cộng dồn số lượng
-
-                if (order[2] !== "Không") { // Nếu có món ăn
-                    const foodKey = order[2];
-                    summary[foodKey] = (summary[foodKey] || 0) + 1; // Cộng dồn, mỗi order tính là 1
-                }
-            });
-
-            const summaryRows = Object.entries(summary).map(([item, quantity]) => [item, quantity]);
-            summaryRows.unshift(["Món", "Số Lượng"]); // Header cho bảng thống kê
-            const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-             XLSX.utils.book_append_sheet(wb, wsSummary, "Summary"); // Sheet mới
-
-
-            // --- Phần ghi file (như cũ, nhưng dùng wb đã có 2 sheet) ---
-            const wbout = XLSX.write(wb, {
-                bookType: 'xlsx',
-                type: 'binary'
-            });
-
-            function s2ab(s) {
-                const buf = new ArrayBuffer(s.length);
-                const view = new Uint8Array(buf);
-                for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-                return buf;
+          // --- Phần lấy dữ liệu và tạo bảng chi tiết (như cũ) ---
+          let table = document.querySelector("table");
+          let rows = [...table.rows].map(row => [...row.cells].map(cell => cell.innerText));
+          const wb = XLSX.utils.book_new();
+          const ws = XLSX.utils.aoa_to_sheet(rows);
+          XLSX.utils.book_append_sheet(wb, ws, "Orders");
+          // --- Thêm phần tạo bảng thống kê ---
+          const summary = {};
+          const todayOrders = rows.slice(1); // Bỏ header, lấy các dòng còn lại
+          todayOrders.forEach(order => {
+            const drinkKey = order[1] + " (" + order[4] + ")"; //  Thức uống (Size)
+            summary[drinkKey] = (summary[drinkKey] || 0) + parseInt(order[3]); // Cộng dồn số lượng
+            if (order[2] !== "Không") { // Nếu có món ăn
+              const foodKey = order[2];
+              summary[foodKey] = (summary[foodKey] || 0) + 1; // Cộng dồn, mỗi order tính là 1
             }
-            const blob = new Blob([s2ab(wbout)], {
-                type: 'application/octet-stream'
-            });
-            const href = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = href;
-            link.download = "danh_sach_don_hang_" + new Date().toISOString().split("T")[0] + ".xlsx";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(href);
+          });
+          const summaryRows = Object.entries(summary).map(([item, quantity]) => [item, quantity]);
+          summaryRows.unshift(["Món", "Số Lượng"]); // Header cho bảng thống kê
+          const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+          XLSX.utils.book_append_sheet(wb, wsSummary, "Summary"); // Sheet mới
+          // --- Phần ghi file (như cũ, nhưng dùng wb đã có 2 sheet) ---
+          const wbout = XLSX.write(wb, {
+            bookType: 'xlsx',
+            type: 'binary'
+          });
+
+          function s2ab(s) {
+            const buf = new ArrayBuffer(s.length);
+            const view = new Uint8Array(buf);
+            for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+            return buf;
+          }
+          const blob = new Blob([s2ab(wbout)], {
+            type: 'application/octet-stream'
+          });
+          const href = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = href;
+          link.download = "danh_sach_don_hang_" + new Date().toISOString().split("T")[0] + ".xlsx";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(href);
         } catch (error) {
-            //console.error("Lỗi khi xuất Excel:", error); // Bỏ console.error
-            Swal.fire({
-                icon: 'error',
-                title: translations[document.documentElement.lang]['exportError'], // Dùng translation
-                text: error.message,
-            });
+          //console.error("Lỗi khi xuất Excel:", error); // Bỏ console.error
+          Swal.fire({
+            icon: 'error',
+            title: translations[document.documentElement.lang]['exportError'], // Dùng translation
+            text: error.message,
+          });
         } finally {
-            document.getElementById("loadingSpinner").classList.add("hidden"); // Hide
+          document.getElementById("loadingSpinner").classList.add("hidden"); // Hide
         }
-    }
+      }
       document.getElementById("orderForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         const name = document.getElementById("name").value.trim();
@@ -790,7 +796,8 @@ function exportToExcel() {
           orderForm.classList.add("hidden");
         } else {
           const timeLeft = `
-												<span class="text-red-600">${remaining.hours}:${remaining.minutes}:${remaining.seconds}</span>`;
+												
+																											<span class="text-red-600">${remaining.hours}:${remaining.minutes}:${remaining.seconds}</span>`;
           const countdownMessages = {
             vi: `Thời gian chốt đơn còn lại: ${timeLeft}`,
             "zh-TW": `剩餘時間：${timeLeft}`,
@@ -807,13 +814,6 @@ function exportToExcel() {
       loadSummary();
       updateCountdown();
     </script>
-<footer class="text-black text-center py-1 font-medium text-sm mx-auto">
-    &copy; 2024 Chingluh Vietnam. All rights reserved. 
-    &bull; 
-    <a href="#" class="text-black font-bold transition-all duration-300 hover:text-blue-600 hover:underline underline-offset-4 decoration-2">
-        ITS Portal
-    </a> 
-    &bull; Designed by IT Strategy Group
-</footer>
+    <footer class="text-black text-center py-1 font-medium text-sm mx-auto"> &copy; 2024 Chingluh Group. All rights reserved. &bull; <a href="#" class="text-black font-bold transition-all duration-300 hover:text-blue-600 hover:underline underline-offset-4 decoration-2"> ITS Portal </a> &bull; Designed by IT Strategy Group </footer>
   </body>
 </html>
