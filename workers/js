@@ -1,0 +1,103 @@
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // Hàm làm sạch dữ liệu đầu vào để chống XSS
+    function sanitizeInput(input) {
+      return input.replace(/[<>"'(){}]/g, "");
+    }
+
+    // Xử lý đơn hàng (POST)
+    if (request.method === "POST" && url.pathname === "/api/orders") {
+      try {
+        const data = await request.json();
+
+        // Kiểm tra dữ liệu đầu vào
+        if (!data.name || !data.drink || !data.quantity) {
+          return new Response(JSON.stringify({ error: "Thiếu thông tin bắt buộc (tên, thức uống, số lượng)." }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Làm sạch dữ liệu đầu vào
+        data.name = sanitizeInput(data.name);
+        data.drink = sanitizeInput(data.drink);
+        data.food = data.food ? sanitizeInput(data.food) : "";
+        data.quantity = sanitizeInput(data.quantity.toString());
+        data.size = data.size ? sanitizeInput(data.size) : "";
+        data.extra = data.extra || false;
+
+        const today = new Date().toISOString().split("T")[0];
+
+        // Lấy file JSON từ R2
+        let orders = {};
+        try {
+          const res = await env.ORDERS_BUCKET.get("orders.json");
+          if (res) orders = await res.json();
+        } catch (e) {
+          // Không cần xử lý lỗi ở đây, vì đã khởi tạo orders = {}
+        }
+
+        // Cập nhật đơn hàng (nếu tên trùng, thay thế đơn cũ)
+        orders[today] = orders[today] || [];
+        orders[today] = orders[today].filter(order => order.name !== data.name);
+
+        // Thêm đơn hàng mới
+        orders[today].push(data);
+
+        // Lưu lại vào R2
+        await env.ORDERS_BUCKET.put("orders.json", JSON.stringify(orders));
+
+        return new Response(JSON.stringify({ message: "Đã lưu đơn hàng!" }), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: "Lỗi server: " + error.message }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Lấy danh sách đơn hàng (GET)
+    if (request.method === "GET" && url.pathname.startsWith("/api/orders")) {
+      try {
+        const res = await env.ORDERS_BUCKET.get("orders.json");
+        const orders = res ? await res.json() : {};
+
+        return new Response(JSON.stringify(orders), {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({ error: "Lỗi server khi lấy data: " + error.message }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Xử lý OPTIONS request (CORS preflight)
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+    }
+
+    return new Response("Not Found", { status: 404 });
+  }
+};
