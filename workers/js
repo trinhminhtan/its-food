@@ -5,7 +5,7 @@ export default {
     function sanitizeInput(input) {
       return input ? input.replace(/[<>"'(){}]/g, "") : "";
     }
-
+    
     function toUpperCase(input) {
       return input ? input.toUpperCase() : "";
     }
@@ -98,6 +98,70 @@ export default {
         },
       });
     }
+
+
+        // 🟢 API: Thống kê đơn hàng theo ngày/tháng
+        if (request.method === "GET" && url.pathname === "/api/stats") {
+          try {
+            const res = await env.ORDERS_BUCKET.get("orders.json");
+            const orders = res ? await res.json() : {};
+            
+            const stats = {};
+            for (const [date, orderList] of Object.entries(orders)) {
+              stats[date] = orderList.reduce((acc, order) => {
+                const key = `${order.drink} (${order.size})`;
+                acc[key] = (acc[key] || 0) + order.quantity;
+                if (order.food) acc[order.food] = (acc[order.food] || 0) + 1;
+                return acc;
+              }, {});
+            }
+    
+            return new Response(JSON.stringify(stats), {
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ error: "Lỗi khi lấy thống kê: " + error.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        }
+    
+        // 🔴 API: Xóa đơn hàng theo ngày hoặc toàn bộ
+        if (request.method === "DELETE" && url.pathname.startsWith("/api/orders")) {
+          try {
+            const dateParam = url.searchParams.get("date");
+            const res = await env.ORDERS_BUCKET.get("orders.json");
+            let orders = res ? await res.json() : {};
+    
+            if (dateParam) {
+              // Xóa đơn hàng của ngày cụ thể
+              if (orders[dateParam]) {
+                delete orders[dateParam];
+              }
+            } else if (url.pathname.endsWith("/all")) {
+              // Xóa toàn bộ dữ liệu
+              orders = {};
+            } else {
+              return new Response(JSON.stringify({ error: "Thiếu tham số date hoặc endpoint không hợp lệ." }), {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+    
+            await env.ORDERS_BUCKET.put("orders.json", JSON.stringify(orders));
+    
+            return new Response(JSON.stringify({ message: "Đã xóa dữ liệu thành công!" }), {
+              status: 200,
+              headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+            });
+          } catch (error) {
+            return new Response(JSON.stringify({ error: "Lỗi khi xóa dữ liệu: " + error.message }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+        }
 
     return new Response("Not Found", { status: 404 });
   }
