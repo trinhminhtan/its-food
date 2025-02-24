@@ -10,6 +10,11 @@ export default {
       return input ? input.toUpperCase() : "";
     }
 
+    // Lấy giờ theo GMT+7
+    function getVNTime() {
+      return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
+    }
+
     if (request.method === "POST" && url.pathname === "/api/orders") {
       try {
         const data = await request.json();
@@ -27,12 +32,8 @@ export default {
         data.size = toUpperCase(data.size ? sanitizeInput(data.size) : "");
         data.extra = data.extra || false;
 
-        function getVNTime() {
-          return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
-        }
-        
         const today = getVNTime().toISOString().split("T")[0];
-        
+
         let orders = {};
         try {
           const res = await env.ORDERS_BUCKET.get("orders.json");
