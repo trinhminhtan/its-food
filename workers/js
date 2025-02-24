@@ -7,6 +7,11 @@ export default {
       return input.replace(/[<>"'(){}]/g, "");
     }
 
+    // Hàm chuyển đổi dữ liệu thành in hoa
+    function toUpperCase(input) {
+      return input ? input.toUpperCase() : "";
+    }
+
     // Xử lý đơn hàng (POST)
     if (request.method === "POST" && url.pathname === "/api/orders") {
       try {
@@ -20,16 +25,23 @@ export default {
           });
         }
 
-        // Làm sạch dữ liệu đầu vào
-        data.name = sanitizeInput(data.name);
-        data.drink = sanitizeInput(data.drink);
-        data.food = data.food ? sanitizeInput(data.food) : "";
-        data.quantity = sanitizeInput(data.quantity.toString());
-        data.size = data.size ? sanitizeInput(data.size) : "";
+        // Làm sạch và chuyển thành chữ in hoa
+        data.name = toUpperCase(sanitizeInput(data.name));
+        data.drink = toUpperCase(sanitizeInput(data.drink));
+        data.food = toUpperCase(data.food ? sanitizeInput(data.food) : "");
+        data.quantity = toUpperCase(sanitizeInput(data.quantity.toString()));
+        data.size = toUpperCase(data.size ? sanitizeInput(data.size) : "");
         data.extra = data.extra || false;
 
-        const today = new Date().toISOString().split("T")[0];
-
+        const today = new Date(new Date().getTime() + 7 * 3600000).toISOString().split("T")[0];
+        
+        const serverTime = new Date(new Date().getTime() + 7 * 3600000); // Giờ GMT+7
+        const hour = serverTime.getHours();
+        
+        if (hour >= 12) {
+          return new Response(JSON.stringify({ error: "Đã quá 12:00, không thể đặt hàng!" }), { status: 400 });
+        }
+        
         // Lấy file JSON từ R2
         let orders = {};
         try {
