@@ -427,44 +427,89 @@ if (updatedOrder.quantity <= 0) {
         document.getElementById("editModal").classList.remove("flex");
     }
 
+function exportCSV() {
+    const startDate = document.getElementById("startDatePicker").value;
+    const endDate = document.getElementById("endDatePicker").value;
 
-    function exportCSV() {
-        const startDate = document.getElementById("startDatePicker").value;
-        const endDate = document.getElementById("endDatePicker").value;
+    if (!startDate || !endDate) {
+        Swal.fire("Lỗi", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "error");
+        return;
+    }
 
-        if (!startDate || !endDate) {
-            Swal.fire("Lỗi", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "error");
-            return;
-        }
-        const dateRange = getDateRange(startDate, endDate);
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Ngày,Tên,Thức Uống,Món Ăn,Số Lượng,Size,Tẩy Đá\n"; // Header row
+    const dateRange = getDateRange(startDate, endDate);
+    let csvContent = "data:text/csv;charset=utf-8,\ufeff"; // Add BOM for Excel
 
-        dateRange.forEach(date => {
-                const todaysOrders = currentOrders[date] || [];
-            todaysOrders.forEach(order => {
+    // --- Sheet 1: Detailed Orders ---
+    csvContent += "--- CHI TIẾT ĐƠN HÀNG ---\n";
+    csvContent += "Ngày,Tên Khách Hàng,Thức Uống,Món Ăn,Số Lượng,Size,Tẩy Đá\n";
+
+    dateRange.forEach(date => {
+        const todaysOrders = currentOrders[date] || [];
+        todaysOrders.forEach(order => {
             const row = [
                 date,
-                order.name,
-                order.drink,
-                order.food || "N/A",
+                `"${order.name}"`,  // Quote names to handle commas
+                `"${order.drink}"`, // Quote drinks
+                `"${order.food || "N/A"}"`, // Quote food
                 order.quantity,
-                order.size || "N/A",
+                `"${order.size || "N/A"}"`, // Quote size
                 order.extra ? "Có" : "Không"
             ].join(",");
             csvContent += row + "\n";
-            });
-        })
+        });
+    });
 
+    // --- Sheet 2: Summary Statistics ---
+    csvContent += "\n--- THỐNG KÊ TỔNG HỢP ---\n";
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `orders_${startDate}_${endDate}.csv`);
-        document.body.appendChild(link); // Required for Firefox
-        link.click();
-        document.body.removeChild(link);
+    let totalOrders = 0;
+    let totalDrinks = 0;
+    let totalFoods = 0;
+    const drinkCounts = {};
+    const foodCounts = {};
+
+    dateRange.forEach(date => {
+        const todaysOrders = currentOrders[date] || [];
+        totalOrders += todaysOrders.length;
+        todaysOrders.forEach(order => {
+            totalDrinks += order.quantity;
+            if (order.food) {
+                totalFoods++;
+            }
+
+            const drinkKey = `${order.drink} (${order.size})`;
+            drinkCounts[drinkKey] = (drinkCounts[drinkKey] || 0) + order.quantity;
+
+            if (order.food) {
+                foodCounts[order.food] = (foodCounts[order.food] || 0) + 1;
+            }
+        });
+    });
+    csvContent += "Tổng số đơn hàng:," + totalOrders + "\n";
+    csvContent += "Tổng số lượng thức uống:," + totalDrinks + "\n";
+    csvContent += "Tổng số món ăn:," + totalFoods + "\n\n";
+
+    csvContent += "Thống kê thức uống:\n";
+    csvContent += "Thức Uống,Số Lượng\n";
+    for (const drink in drinkCounts) {
+      csvContent += `"${drink}",${drinkCounts[drink]}\n`;
     }
+
+    csvContent += "\nThống kê món ăn:\n";
+    csvContent += "Món Ăn,Số Lượng\n";
+     for (const food in foodCounts) {
+        csvContent += `"${food}",${foodCounts[food]}\n`;
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `orders_${startDate}_${endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
     function setDateRange(days) {
         const today = new Date();
         const startDate = new Date(today);
