@@ -94,6 +94,7 @@
         </div>
     </div>
     <script>
+	
       const API_URL = "https://r2bucket.wmtan.workers.dev/api";
       let currentOrders = {}; // Store fetched orders globally
       let myChart = null;
@@ -113,7 +114,7 @@
           const endDate = document.getElementById("endDatePicker").value;
 
           if (!startDate || !endDate) {
-              Swal.fire("Lỗi", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "error");
+              Swal.fire("Lưu ý", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "warning");
               return;
           }
           // Show loading indicator
@@ -214,6 +215,7 @@
           });
         });
       }
+	  
 function renderTable(orders, startDate, endDate) {
     const tableBody = document.getElementById("orderTableBody");
     tableBody.innerHTML = "";
@@ -238,6 +240,7 @@ function renderTable(orders, startDate, endDate) {
         });
     });
 }
+
 function renderChart(orders, startDate, endDate) {
     const dateRange = getDateRange(startDate, endDate);
     const drinkStats = {};
