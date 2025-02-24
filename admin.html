@@ -8,24 +8,47 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <style>
+        /* Custom styles for the chart (optional) */
+        #orderChart {
+            max-height: 400px; /* Adjust as needed */
+        }
+    </style>
 </head>
 <body class="bg-gray-100 p-5">
     <div class="container mx-auto bg-white p-6 rounded-lg shadow-md">
         <h1 class="text-2xl font-bold mb-4">Quản lý đơn hàng</h1>
-        <label for="datePicker" class="block mb-2">Chọn ngày:</label>
-        <input type="date" id="datePicker" class="p-2 border rounded mb-4">
-        <button onclick="fetchOrders()" class="bg-blue-500 text-white px-4 py-2 rounded">Xem Thống Kê</button>
-        <button onclick="deleteOrders()" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Xóa Ngày Chọn</button>
-        <button onclick="deleteAllOrders()" class="bg-red-700 text-white px-4 py-2 rounded ml-2">Xóa Tất Cả</button>
-        <button onclick="exportCSV()" class="bg-green-500 text-white px-4 py-2 rounded ml-2">Xuất CSV</button>
-        
+
+        <div class="flex flex-wrap items-center mb-4">
+            <label for="startDatePicker" class="mr-2">Từ ngày:</label>
+            <input type="date" id="startDatePicker" class="p-2 border rounded mr-4">
+
+            <label for="endDatePicker" class="mr-2">Đến ngày:</label>
+            <input type="date" id="endDatePicker" class="p-2 border rounded mr-4">
+
+            <button onclick="fetchOrders()" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">Xem Thống Kê</button>
+            <button onclick="deleteOrders()" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded ml-2">Xóa Ngày Chọn</button>
+            <button onclick="deleteAllOrders()" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded ml-2">Xóa Tất Cả</button>
+            <button onclick="exportCSV()" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded ml-2">Xuất CSV</button>
+        </div>
+
+        <div class="flex flex-wrap items-center mb-4">
+          <button onclick="setDateRange(7)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded mr-2">7 Ngày</button>
+          <button onclick="setDateRange(14)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded mr-2">2 Tuần</button>
+          <button onclick="setDateRange(30)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded mr-2">1 Tháng</button>
+          <button onclick="setDateRange(90)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded mr-2">3 Tháng</button>
+          <button onclick="setDateRange(365)" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded mr-2">1 Năm</button>
+      </div>
+
+        <div id="loadingIndicator" class="hidden text-center text-gray-500">Đang tải...</div>
+
         <table class="table-auto w-full border-collapse border border-gray-200 mt-4">
             <thead>
                 <tr class="bg-gray-300">
                     <th class="border px-4 py-2">Tên</th>
                     <th class="border px-4 py-2">Thức uống</th>
                     <th class="border px-4 py-2">Món ăn</th>
-                    <th class="border px-4 py-2">Số lượng đồ uống</th>
+                    <th class="border px-4 py-2">Số lượng</th>
                     <th class="border px-4 py-2">Size</th>
                     <th class="border px-4 py-2">Tẩy Đá</th>
                     <th class="border px-4 py-2">Chỉnh Sửa</th>
@@ -33,103 +56,428 @@
             </thead>
             <tbody id="orderTableBody"></tbody>
         </table>
+
         <canvas id="orderChart" class="mt-5"></canvas>
     </div>
 
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-bold mb-4">Chỉnh sửa đơn hàng</h2>
+            <input type="hidden" id="editOrderName">
+            <input type="hidden" id="editOrderDate">  <div class="mb-4">
+                <label for="editDrink" class="block mb-2">Thức uống:</label>
+                <input type="text" id="editDrink" class="p-2 border rounded w-full">
+            </div>
+            <div class="mb-4">
+                <label for="editFood" class="block mb-2">Món ăn:</label>
+                <input type="text" id="editFood" class="p-2 border rounded w-full">
+            </div>
+            <div class="mb-4">
+                <label for="editQuantity" class="block mb-2">Số lượng:</label>
+                <input type="number" id="editQuantity" class="p-2 border rounded w-full">
+            </div>
+            <div class="mb-4">
+                <label for="editSize" class="block mb-2">Size:</label>
+                <input type="text" id="editSize" class="p-2 border rounded w-full">
+            </div>
+             <div class="mb-4">
+                <label for="editExtra" class="block mb-2">Tẩy đá:</label>
+                <select id="editExtra" class="p-2 border rounded w-full">
+                    <option value="true">Có</option>
+                    <option value="false">Không</option>
+                </select>
+            </div>
+            <div class="flex justify-end">
+                <button onclick="updateOrder()" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded mr-2">Lưu</button>
+                <button onclick="closeEditModal()" class="bg-gray-400 hover:bg-gray-600 text-white px-4 py-2 rounded">Hủy</button>
+            </div>
+        </div>
+    </div>
     <script>
-        const API_URL = "https://r2bucket.wmtan.workers.dev/api/orders";
+      const API_URL = "https://r2bucket.wmtan.workers.dev/api";
+      let currentOrders = {}; // Store fetched orders globally
+      let myChart = null;
 
-        async function fetchOrders() {
-            const date = document.getElementById("datePicker").value || new Date().toISOString().split("T")[0];
-            try {
-                const response = await fetch(API_URL);
-                const orders = await response.json();
-                renderTable(orders, date);
-                renderChart(orders, date);
-            } catch (error) {
-                console.error("Lỗi khi lấy dữ liệu đơn hàng:", error);
-            }
+      // Debounce function to limit API calls
+      function debounce(func, wait) {
+          let timeout;
+          return function(...args) {
+              const context = this;
+              clearTimeout(timeout);
+              timeout = setTimeout(() => func.apply(context, args), wait);
+          };
+      }
+
+      async function fetchOrders() {
+          const startDate = document.getElementById("startDatePicker").value;
+          const endDate = document.getElementById("endDatePicker").value;
+
+          if (!startDate || !endDate) {
+              Swal.fire("Lỗi", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "error");
+              return;
+          }
+          // Show loading indicator
+          document.getElementById("loadingIndicator").classList.remove("hidden");
+
+          try {
+              const response = await fetch(`${API_URL}/orders`);
+              const orders = await response.json();
+              currentOrders = orders; // Store for later use (e.g., CSV export)
+              renderTable(orders, startDate, endDate);
+              renderChart(orders, startDate, endDate);
+
+          } catch (error) {
+              console.error("Lỗi khi lấy dữ liệu đơn hàng:", error);
+              Swal.fire("Lỗi", "Không thể lấy dữ liệu đơn hàng. Vui lòng thử lại sau.", "error");
+          } finally {
+              //Hide loading
+              document.getElementById("loadingIndicator").classList.add("hidden");
+          }
+      }
+
+      async function deleteOrders() {
+        const startDate = document.getElementById("startDatePicker").value;
+        const endDate = document.getElementById("endDatePicker").value;
+
+        if (!startDate || !endDate) {
+            Swal.fire("Lỗi", "Vui lòng chọn ngày cần xóa!", "error");
+            return;
         }
 
-        async function deleteOrders() {
-            const date = document.getElementById("datePicker").value;
-            if (!date) {
-                alert("Vui lòng chọn ngày cần xóa!");
-                return;
-            }
-            if (confirm(`Bạn có chắc muốn xóa đơn hàng ngày ${date}?`)) {
+        Swal.fire({
+            title: `Bạn có chắc muốn xóa đơn hàng từ ${startDate} đến ${endDate}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
                 try {
-                    await fetch(`${API_URL}?date=${date}`, { method: "DELETE" });
-                    alert("Đã xóa đơn hàng ngày " + date);
-                    fetchOrders();
+                    // Make this a loop to delete day by day.
+                    const dateRange = getDateRange(startDate, endDate);
+                    for (const date of dateRange) {
+                        await fetch(`<span class="math-inline">\{API\_URL\}/orders?date\=</span>{date}`, { method: "DELETE" });
+                    }
+
+                    Swal.fire("Thành công", "Đã xóa đơn hàng.", "success");
+                    fetchOrders(); // Refresh data
                 } catch (error) {
                     console.error("Lỗi khi xóa dữ liệu:", error);
+                    Swal.fire("Lỗi", "Không thể xóa đơn hàng. Vui lòng thử lại sau.", "error");
                 }
             }
-        }
+        });
+      }
 
-        async function deleteAllOrders() {
-            if (confirm("Bạn có chắc chắn muốn xóa tất cả đơn hàng?")) {
-                try {
-                    await fetch(`${API_URL}/all`, { method: "DELETE" });
-                    alert("Đã xóa toàn bộ đơn hàng!");
-                    fetchOrders();
-                } catch (error) {
-                    console.error("Lỗi khi xóa toàn bộ dữ liệu:", error);
-                }
-            }
-        }
+      async function deleteAllOrders() {
+          Swal.fire({
+              title: "Bạn có chắc chắn muốn xóa tất cả đơn hàng?",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonText: "Xóa",
+              cancelButtonText: "Hủy"
+          }).then(async (result) => {
+              if (result.isConfirmed) {
+                  try {
+                      await fetch(`${API_URL}/orders/all`, { method: "DELETE" });
+                      Swal.fire("Thành công", "Đã xóa toàn bộ đơn hàng!", "success");
+                      fetchOrders();
+                  } catch (error) {
+                      console.error("Lỗi khi xóa toàn bộ dữ liệu:", error);
+                      Swal.fire("Lỗi", "Không thể xóa toàn bộ đơn hàng. Vui lòng thử lại.", "error");
+                  }
+              }
+          });
+      }
 
-        function renderTable(orders, date) {
-            const tableBody = document.getElementById("orderTableBody");
-            tableBody.innerHTML = "";
-            
-            const todaysOrders = orders[date] || [];
-            todaysOrders.forEach(order => {
-                const row = `<tr class='border'>
-                    <td class='border px-4 py-2'>${order.name}</td>
-                    <td class='border px-4 py-2'>${order.drink}</td>
-                    <td class='border px-4 py-2'>${order.food || "N/A"}</td>
-                    <td class='border px-4 py-2'>${order.quantity}</td>
-                    <td class='border px-4 py-2'>${order.size || "N/A"}</td>
-                    <td class='border px-4 py-2'>${order.extra ? "Có" : "Không"}</td>
-                    <td class='border px-4 py-2'><button onclick="editOrder('${order.name}')" class="bg-yellow-500 text-white px-2 py-1 rounded">Sửa</button></td>
+      function renderTable(orders, startDate, endDate) {
+        const tableBody = document.getElementById("orderTableBody");
+        tableBody.innerHTML = "";
+
+        const dateRange = getDateRange(startDate, endDate);
+        dateRange.forEach(date => {
+          const todaysOrders = orders[date] || [];
+          todaysOrders.forEach(order => {
+            const row = `
+              <tr>
+                <td class="border px-4 py-2"><span class="math-inline">\{order\.name\}</td\>
+<td class\="border px\-4 py\-2"\></span>{order.drink}</td>
+                <td class="border px-4 py-2"><span class="math-inline">\{order\.food \|\| "N/A"\}</td\>
+<td class\="border px\-4 py\-2"\></span>{order.quantity}</td>
+                <td class="border px-4 py-2"><span class="math-inline">\{order\.size \|\| "N/A"\}</td\>
+<td class\="border px\-4 py\-2"\></span>{order.extra ? "Có" : "Không"}</td>
+                <td class="border px-4 py-2">
+                  <button onclick="editOrder('<span class="math-inline">\{order\.name\}', '</span>{date}')" class="bg-yellow-500 hover:bg-yellow-700 text-white px-2 py-1 rounded">Sửa</button>
+                </td>
+              </tr>`;
+            tableBody.innerHTML += row;
+          });
+        });
+      }
+function renderTable(orders, startDate, endDate) {
+    const tableBody = document.getElementById("orderTableBody");
+    tableBody.innerHTML = "";
+
+    const dateRange = getDateRange(startDate, endDate);
+    dateRange.forEach(date => {
+        const todaysOrders = orders[date] || [];
+        todaysOrders.forEach(order => {
+            const row = `
+                <tr class="border">
+                    <td class="border px-4 py-2">${order.name}</td>
+                    <td class="border px-4 py-2">${order.drink}</td>
+                    <td class="border px-4 py-2">${order.food || "N/A"}</td>
+                    <td class="border px-4 py-2">${order.quantity}</td>
+                    <td class="border px-4 py-2">${order.size || "N/A"}</td>
+                    <td class="border px-4 py-2">${order.extra ? "Có" : "Không"}</td>
+                    <td class="border px-4 py-2">
+                        <button onclick="editOrder('${order.name}', '${date}')" class="bg-yellow-500 hover:bg-yellow-700 text-white px-2 py-1 rounded">Sửa</button>
+                    </td>
                 </tr>`;
-                tableBody.innerHTML += row;
-            });
+            tableBody.innerHTML += row;
+        });
+    });
+}
+function renderChart(orders, startDate, endDate) {
+    const dateRange = getDateRange(startDate, endDate);
+    const drinkStats = {};
+    const foodStats = {};
+
+    dateRange.forEach(date => {
+        const todaysOrders = orders[date] || [];
+        todaysOrders.forEach(order => {
+            const drinkKey = `${order.drink} (${order.size})`;
+            drinkStats[drinkKey] = (drinkStats[drinkKey] || 0) + order.quantity;
+            if (order.food) {
+                foodStats[order.food] = (foodStats[order.food] || 0) + 1;
+            }
+        });
+    });
+
+    const drinkLabels = Object.keys(drinkStats);
+    const foodLabels = Object.keys(foodStats);
+    const allLabels = [...new Set([...drinkLabels, ...foodLabels])]; // Unique labels
+
+    const drinkData = allLabels.map(label => drinkStats[label] || 0); // Handle missing data
+    const foodData = allLabels.map(label => foodStats[label] || 0);
+
+    // Generate dynamic colors
+    const dynamicColors = (numColors) => {
+        const colors = [];
+        for (let i = 0; i < numColors; i++) {
+            const r = Math.floor(Math.random() * 255);
+            const g = Math.floor(Math.random() * 255);
+            const b = Math.floor(Math.random() * 255);
+            colors.push(`rgba(${r}, ${g}, ${b}, 0.7)`); // Use rgba for transparency
         }
+        return colors;
+    };
 
-        function renderChart(orders, date) {
-            const todaysOrders = orders[date] || [];
-            
-            const drinkStats = {};
-            const foodStats = {};
-            todaysOrders.forEach(order => {
-                const key = `${order.drink} (${order.size})`;
-                drinkStats[key] = (drinkStats[key] || 0) + order.quantity;
-                if (order.food) foodStats[order.food] = (foodStats[order.food] || 0) + 1;
-            });
+    const drinkColors = dynamicColors(drinkLabels.length);
+    const foodColors = dynamicColors(foodLabels.length);
 
-            const ctx = document.getElementById("orderChart").getContext("2d");
-            new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: [...Object.keys(drinkStats), ...Object.keys(foodStats)],
-                    datasets: [{
-                        label: "Số lượng",
-                        data: [...Object.values(drinkStats), ...Object.values(foodStats)],
-                        backgroundColor: "#4CAF50",
-                        borderWidth: 1
-                    }]
+
+    const ctx = document.getElementById("orderChart").getContext("2d");
+    if (myChart) {
+        myChart.destroy();
+    }
+
+    myChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: allLabels,
+            datasets: [
+                {
+                    label: "Drinks",
+                    data: drinkData,
+                    backgroundColor: drinkColors, // Use dynamic colors
+                    borderWidth: 1
+                },
+                {
+                    label: "Foods",
+                    data: foodData,
+                    backgroundColor: foodColors, // Use dynamic colors
+                    borderWidth: 1
                 }
+            ]
+        },
+        options: {
+            responsive: true,       // Make chart responsive
+            maintainAspectRatio: false, // Allow chart to fill container
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
+                    },
+                    title: {  // Add Y-axis title
+                        display: true,
+                        text: 'Quantity'
+                    }
+                },
+                 x: {
+                    title: { // Add x-axis title
+                        display:true,
+                        text: 'Items'
+                    }
+                }
+            },
+            plugins: {  // Add chart title
+                title: {
+                    display: true,
+                    text: `Order Statistics ( ${startDate} to ${endDate} )`,
+                    font: {
+                        size: 16
+                    }
+                }
+            }
+        }
+    });
+}
+      // Helper function to generate a range of dates
+      function getDateRange(startDate, endDate) {
+          const dates = [];
+          let currentDate = new Date(startDate);
+          const end = new Date(endDate);
+
+          while (currentDate <= end) {
+              dates.push(currentDate.toISOString().split("T")[0]);
+              currentDate.setDate(currentDate.getDate() + 1);
+          }
+          return dates;
+      }
+
+      function editOrder(name, date) {
+          const order = currentOrders[date].find(o => o.name === name);
+          if (!order) {
+              Swal.fire("Lỗi", "Không tìm thấy đơn hàng.", "error");
+              return;
+          }
+
+          // Populate the modal with order details, including the date
+          document.getElementById("editOrderName").value = order.name;
+          document.getElementById("editOrderDate").value = date; // Set the date
+          document.getElementById("editDrink").value = order.drink;
+          document.getElementById("editFood").value = order.food || "";
+          document.getElementById("editQuantity").value = order.quantity;
+          document.getElementById("editSize").value = order.size || "";
+          document.getElementById("editExtra").value = order.extra.toString();
+
+          // Show the modal
+          document.getElementById("editModal").classList.remove("hidden");
+          document.getElementById("editModal").classList.add("flex");
+      }
+
+
+      const debouncedUpdateOrder = debounce(updateOrder, 500); // 500ms debounce
+
+      async function updateOrder() {
+        const name = document.getElementById("editOrderName").value;
+        const orderDate = document.getElementById("editOrderDate").value; // Get the date
+        const updatedOrder = {
+            name: name,
+            drink: document.getElementById("editDrink").value.toUpperCase(),
+            food: document.getElementById("editFood").value.toUpperCase(),
+            quantity: parseInt(document.getElementById("editQuantity").value, 10),
+            size: document.getElementById("editSize").value.toUpperCase(),
+            extra: document.getElementById("editExtra").value === "true",
+        };
+
+          // Basic client-side validation
+        if (!updatedOrder.name || !updatedOrder.drink || isNaN(updatedOrder.quantity)) {
+            Swal.fire("Lỗi", "Vui lòng điền đầy đủ thông tin (tên, thức uống, số lượng).", "error");
+            return;
+        }
+if (updatedOrder.quantity <= 0) {
+            Swal.fire("Lỗi", "Vui lòng điền số lượng lớn hơn 0.", "error");
+            return;
+        }
+
+        if (!orderDate) {
+            Swal.fire("Lỗi", "Không tìm thấy ngày của đơn hàng.", "error");
+            return;
+        }
+
+        try {
+            // Remove the old order (we'll re-add the updated one)
+            currentOrders[orderDate] = currentOrders[orderDate].filter(o => o.name !== name);
+            // Add the updated order
+            currentOrders[orderDate].push(updatedOrder);
+
+            // Send the updated order to the API
+            await fetch(`${API_URL}/orders`, {  // Corrected endpoint
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedOrder), // Send only updated order
             });
-        }
 
-        function exportCSV() {
-            alert("Xuất CSV (Chưa triển khai)");
-        }
+            Swal.fire("Thành công", "Đã cập nhật đơn hàng!", "success");
+            closeEditModal();
+            fetchOrders(); // Refresh the table and chart
 
-        fetchOrders();
+        } catch (error) {
+            console.error("Lỗi khi cập nhật đơn hàng:", error);
+            Swal.fire("Lỗi", "Không thể cập nhật đơn hàng. Vui lòng thử lại sau.", "error");
+        }
+    }
+
+    function closeEditModal() {
+        document.getElementById("editModal").classList.add("hidden");
+        document.getElementById("editModal").classList.remove("flex");
+    }
+
+
+    function exportCSV() {
+        const startDate = document.getElementById("startDatePicker").value;
+        const endDate = document.getElementById("endDatePicker").value;
+
+        if (!startDate || !endDate) {
+            Swal.fire("Lỗi", "Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc.", "error");
+            return;
+        }
+        const dateRange = getDateRange(startDate, endDate);
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Ngày,Tên,Thức Uống,Món Ăn,Số Lượng,Size,Tẩy Đá\n"; // Header row
+
+        dateRange.forEach(date => {
+                const todaysOrders = currentOrders[date] || [];
+            todaysOrders.forEach(order => {
+            const row = [
+                date,
+                order.name,
+                order.drink,
+                order.food || "N/A",
+                order.quantity,
+                order.size || "N/A",
+                order.extra ? "Có" : "Không"
+            ].join(",");
+            csvContent += row + "\n";
+            });
+        })
+
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `orders_${startDate}_${endDate}.csv`);
+        document.body.appendChild(link); // Required for Firefox
+        link.click();
+        document.body.removeChild(link);
+    }
+    function setDateRange(days) {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - days + 1); // +1 to include today
+
+        document.getElementById("startDatePicker").value = startDate.toISOString().split("T")[0];
+        document.getElementById("endDatePicker").value = today.toISOString().split("T")[0];
+        fetchOrders(); // Automatically fetch orders after setting the date range
+    }
+
+    // Initial fetch on page load
+    fetchOrders();
+
     </script>
 </body>
 </html>
