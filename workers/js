@@ -2,22 +2,17 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Hàm làm sạch dữ liệu đầu vào để chống XSS
     function sanitizeInput(input) {
-      return input.replace(/[<>"'(){}]/g, "");
+      return input ? input.replace(/[<>"'(){}]/g, "") : "";
     }
 
-    // Hàm chuyển đổi dữ liệu thành in hoa
     function toUpperCase(input) {
       return input ? input.toUpperCase() : "";
     }
 
-    // Xử lý đơn hàng (POST)
     if (request.method === "POST" && url.pathname === "/api/orders") {
       try {
         const data = await request.json();
-
-        // Kiểm tra dữ liệu đầu vào
         if (!data.name || !data.drink || !data.quantity) {
           return new Response(JSON.stringify({ error: "Thiếu thông tin bắt buộc (tên, thức uống, số lượng)." }), {
             status: 400,
@@ -25,40 +20,35 @@ export default {
           });
         }
 
-        // Làm sạch và chuyển thành chữ in hoa
         data.name = toUpperCase(sanitizeInput(data.name));
         data.drink = toUpperCase(sanitizeInput(data.drink));
         data.food = toUpperCase(data.food ? sanitizeInput(data.food) : "");
-        data.quantity = toUpperCase(sanitizeInput(data.quantity.toString()));
+        data.quantity = parseInt(data.quantity, 10) || 1;
         data.size = toUpperCase(data.size ? sanitizeInput(data.size) : "");
         data.extra = data.extra || false;
 
-        const today = new Date(new Date().getTime() + 7 * 3600000).toISOString().split("T")[0];
-        
-        const serverTime = new Date(new Date().getTime() + 7 * 3600000); // Giờ GMT+7
-        const hour = serverTime.getHours();
-        
-        if (hour >= 12) {
-          return new Response(JSON.stringify({ error: "Đã quá 12:00, không thể đặt hàng!" }), { status: 400 });
+        function getVNTime() {
+          return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" }));
         }
         
-        // Lấy file JSON từ R2
+        const today = getVNTime().toISOString().split("T")[0];
+        
         let orders = {};
         try {
           const res = await env.ORDERS_BUCKET.get("orders.json");
-          if (res) orders = await res.json();
+          if (res) {
+            orders = await res.json();
+          } else {
+            orders = {};
+          }
         } catch (e) {
-          // Không cần xử lý lỗi ở đây, vì đã khởi tạo orders = {}
+          orders = {};
         }
 
-        // Cập nhật đơn hàng (nếu tên trùng, thay thế đơn cũ)
         orders[today] = orders[today] || [];
         orders[today] = orders[today].filter(order => order.name !== data.name);
-
-        // Thêm đơn hàng mới
         orders[today].push(data);
 
-        // Lưu lại vào R2
         await env.ORDERS_BUCKET.put("orders.json", JSON.stringify(orders));
 
         return new Response(JSON.stringify({ message: "Đã lưu đơn hàng!" }), {
@@ -78,7 +68,6 @@ export default {
       }
     }
 
-    // Lấy danh sách đơn hàng (GET)
     if (request.method === "GET" && url.pathname.startsWith("/api/orders")) {
       try {
         const res = await env.ORDERS_BUCKET.get("orders.json");
@@ -98,7 +87,6 @@ export default {
       }
     }
 
-    // Xử lý OPTIONS request (CORS preflight)
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
