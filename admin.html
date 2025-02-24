@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Đặt Đồ Ăn</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 p-5">
+    <div class="container mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Quản lý đơn hàng</h1>
+        <label for="datePicker" class="block mb-2">Chọn ngày:</label>
+        <input type="date" id="datePicker" class="p-2 border rounded mb-4">
+        <button onclick="fetchOrders()" class="bg-blue-500 text-white px-4 py-2 rounded">Xem Thống Kê</button>
+        <button onclick="deleteOrders()" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Xóa Ngày Chọn</button>
+        <button onclick="deleteAllOrders()" class="bg-red-700 text-white px-4 py-2 rounded ml-2">Xóa Tất Cả</button>
+        <button onclick="exportCSV()" class="bg-green-500 text-white px-4 py-2 rounded ml-2">Xuất CSV</button>
+        
+        <table class="table-auto w-full border-collapse border border-gray-200 mt-4">
+            <thead>
+                <tr class="bg-gray-300">
+                    <th class="border px-4 py-2">Tên</th>
+                    <th class="border px-4 py-2">Thức uống</th>
+                    <th class="border px-4 py-2">Món ăn</th>
+                    <th class="border px-4 py-2">Số lượng đồ uống</th>
+                    <th class="border px-4 py-2">Size</th>
+                    <th class="border px-4 py-2">Tẩy Đá</th>
+                    <th class="border px-4 py-2">Chỉnh Sửa</th>
+                </tr>
+            </thead>
+            <tbody id="orderTableBody"></tbody>
+        </table>
+        <canvas id="orderChart" class="mt-5"></canvas>
+    </div>
+
+    <script>
+        const API_URL = "https://r2bucket.wmtan.workers.dev/api/orders";
+
+        async function fetchOrders() {
+            const date = document.getElementById("datePicker").value || new Date().toISOString().split("T")[0];
+            try {
+                const response = await fetch(API_URL);
+                const orders = await response.json();
+                renderTable(orders, date);
+                renderChart(orders, date);
+            } catch (error) {
+                console.error("Lỗi khi lấy dữ liệu đơn hàng:", error);
+            }
+        }
+
+        async function deleteOrders() {
+            const date = document.getElementById("datePicker").value;
+            if (!date) {
+                alert("Vui lòng chọn ngày cần xóa!");
+                return;
+            }
+            if (confirm(`Bạn có chắc muốn xóa đơn hàng ngày ${date}?`)) {
+                try {
+                    await fetch(`${API_URL}?date=${date}`, { method: "DELETE" });
+                    alert("Đã xóa đơn hàng ngày " + date);
+                    fetchOrders();
+                } catch (error) {
+                    console.error("Lỗi khi xóa dữ liệu:", error);
+                }
+            }
+        }
+
+        async function deleteAllOrders() {
+            if (confirm("Bạn có chắc chắn muốn xóa tất cả đơn hàng?")) {
+                try {
+                    await fetch(`${API_URL}/all`, { method: "DELETE" });
+                    alert("Đã xóa toàn bộ đơn hàng!");
+                    fetchOrders();
+                } catch (error) {
+                    console.error("Lỗi khi xóa toàn bộ dữ liệu:", error);
+                }
+            }
+        }
+
+        function renderTable(orders, date) {
+            const tableBody = document.getElementById("orderTableBody");
+            tableBody.innerHTML = "";
+            
+            const todaysOrders = orders[date] || [];
+            todaysOrders.forEach(order => {
+                const row = `<tr class='border'>
+                    <td class='border px-4 py-2'>${order.name}</td>
+                    <td class='border px-4 py-2'>${order.drink}</td>
+                    <td class='border px-4 py-2'>${order.food || "N/A"}</td>
+                    <td class='border px-4 py-2'>${order.quantity}</td>
+                    <td class='border px-4 py-2'>${order.size || "N/A"}</td>
+                    <td class='border px-4 py-2'>${order.extra ? "Có" : "Không"}</td>
+                    <td class='border px-4 py-2'><button onclick="editOrder('${order.name}')" class="bg-yellow-500 text-white px-2 py-1 rounded">Sửa</button></td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function renderChart(orders, date) {
+            const todaysOrders = orders[date] || [];
+            
+            const drinkStats = {};
+            const foodStats = {};
+            todaysOrders.forEach(order => {
+                const key = `${order.drink} (${order.size})`;
+                drinkStats[key] = (drinkStats[key] || 0) + order.quantity;
+                if (order.food) foodStats[order.food] = (foodStats[order.food] || 0) + 1;
+            });
+
+            const ctx = document.getElementById("orderChart").getContext("2d");
+            new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: [...Object.keys(drinkStats), ...Object.keys(foodStats)],
+                    datasets: [{
+                        label: "Số lượng",
+                        data: [...Object.values(drinkStats), ...Object.values(foodStats)],
+                        backgroundColor: "#4CAF50",
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+
+        function exportCSV() {
+            alert("Xuất CSV (Chưa triển khai)");
+        }
+
+        fetchOrders();
+    </script>
+</body>
+</html>
