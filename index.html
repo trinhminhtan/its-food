@@ -540,8 +540,7 @@
           document.getElementById("loadingSpinner").classList.add("hidden");
         }
       }
-      
-	  async function loadSummary() {
+      async function loadSummary() {
   try {
     document.getElementById("loadingSpinner").classList.remove("hidden");
 
@@ -549,15 +548,16 @@
     if (!res.ok) throw new Error(`Lỗi: ${res.status} - ${await res.text()}`);
 
     const data = await res.json();
-    const today = data.serverDate;  // 🔹 Dùng ngày từ server
-    const todayOrders = data.orders[today] || [];
+    const today = data.serverDate;
+    const todayOrders = data.orders?.[today] || [];
 
     const summary = {};
     todayOrders.forEach(order => {
-      const drinkKey = order.drink + " (" + order.size + ")";
-      summary[drinkKey] = (summary[drinkKey] || 0) + order.quantity;
+      const drinkKey = (order.drink || "Không rõ") + " (" + (order.size || "M") + ")";
+      summary[drinkKey] = (summary[drinkKey] || 0) + (parseInt(order.quantity, 10) || 1);
+      
       if (order.food) {
-        const foodKey = order.food;
+        const foodKey = order.food || "Không có món ăn";
         summary[foodKey] = (summary[foodKey] || 0) + 1;
       }
     });
